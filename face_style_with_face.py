@@ -9,7 +9,7 @@ from argparse import Namespace
 from facenet_pytorch import MTCNN
 
 # Add JoJoGAN directory to sys.path
-jojo_gan_path = r'C:/Users/Ye Myat Moe/Documents/sp/deep_learning/JoJoGAN'
+jojo_gan_path = r'D:/jupyter notebook/JoJoGAN'
 if jojo_gan_path not in sys.path:
     sys.path.append(jojo_gan_path)
 
