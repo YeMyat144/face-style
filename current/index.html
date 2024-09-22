@@ -9,8 +9,8 @@
     
 </head>
 <body>
-    <div id="container">
-        <h1>JoJo Real-Time Face Stylization</h1>
+    <div>
+        <h1>Real-Time Face Stylization</h1>
         <div id="imageContainer">
             <h2>Image Transformation</h2>
             <input type="file" id="inputImage" accept="image/*" />
@@ -23,17 +23,16 @@
         
         <div id="videoContainer">
             <h2>Real-Time Video</h2>
-            <button id="startVideo">Start Real-Time Stylization</button>
-            <button id="stopVideo" style="display: none;">Stop Real-Time Stylization</button><br><br>
-            <div style="display: flex;">
-                <video id="webcam" autoplay style="display: none;"></video>
-                <canvas id="outputCanvas" autoplay style="display: none;"></canvas>
+            <button id="startVideo">Start</button>
+            <button id="stopVideo" style="display: none;">Stop</button><br><br>
+            <div id="container" style="display: flex">
+                <video id="webcam" autoplay ></video>
+                <canvas id="outputCanvas" autoplay></canvas>
             </div>
         </div>
     </div>
 
     <script>
-        // Image Transformation Logic
         document.getElementById('transformButton').addEventListener('click', async () => {
             const inputImage = document.getElementById('inputImage').files[0];
             if (!inputImage) return;

@@ -8,16 +8,29 @@ body {
 }
 
 #imageContainer, #videoContainer {
+    width: 45rem;
     margin-top: 20px;
     padding: 20px;
     border: 2px solid #bbbaba;
     border-radius: 5px;
 }
-#imageContainer img, #videoContainer video, #outputCanvas {
+#imageContainer img, #videoContainer  {
     max-width: 100%;
     border: 2px solid #dacfcf;
     border-radius: 10px;
 }
+#container {  
+    display: flex;  
+    width: 100%;  
+}  
+
+
+#webcam, #outputCanvas {  
+    flex: 1; /* Takes up half of the container width */  
+    display: block; /* Make it visible */  
+    width: 40%;/* Adjust height to maintain aspect ratio */  
+    border: 1px solid #ccc; /* Optional: Add border for visibility */  
+}  
 button {
     padding: 10px 20px;
     background-color: #8a20bc;
