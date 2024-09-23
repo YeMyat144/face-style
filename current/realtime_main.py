@@ -1,11 +1,13 @@
 import os
 import cv2
 import torch
+import asyncio
+import websockets
 import numpy as np
-import torch.nn as nn
-
+from PIL import Image
+from io import BytesIO
+import base64
 from torch.nn import functional as F
-
 
 class ResBlock(nn.Module):
     def __init__(self, num_channel):
@@ -89,43 +91,61 @@ class SimpleGenerator(nn.Module):
         up3 = self.up3(up2 + down2)
         up4 = self.up4(up3 + down1)
         return up4
+    
+class RealTimeJoJoStylization:
+    def __init__(self):
+        self.model = self.load_model()
+        if self.model:
+            print("Model loaded successfully!")
 
+    def load_model(self):
+        model = SimpleGenerator()
+        weight_path = '/current/weight.pth'
+        if not os.path.exists(weight_path):
+            print(f"Error: {weight_path} file not found.")
+            return None
+        model.load_state_dict(torch.load(weight_path, map_location='cpu'))
+        model.eval()
+        return model
+
+    async def process_frame(self, websocket, path):
+        async for message in websocket:
+            # Receive frame from client
+            frame_data = base64.b64decode(message)
+            image = Image.open(BytesIO(frame_data))
+            image = np.array(image)
+
+            # Convert image from RGB to model's input format
+            image = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
+            image = cv2.resize(image, (256, 256))
+            image = image / 127.5 - 1
+            image = image.transpose(2, 0, 1)
+            image = torch.tensor(image).unsqueeze(0)
+
+            with torch.no_grad():
+                output = self.model(image.float())
+
+            # Convert output back to image
+            output = output.squeeze(0).detach().numpy()
+            output = output.transpose(1, 2, 0)
+            output = (output + 1) * 127.5
+            output = np.clip(output, 0, 255).astype(np.uint8)
+            output = cv2.cvtColor(output, cv2.COLOR_BGR2RGB)
+
+            # Encode the processed frame as base64
+            output_image = Image.fromarray(output)
+            buffer = BytesIO()
+            output_image.save(buffer, format="JPEG")
+            processed_frame = base64.b64encode(buffer.getvalue()).decode()
+
+            # Send back the processed frame
+            await websocket.send(processed_frame)
+
+# Start the WebSocket server
+async def start_server():
+    processor = RealTimeJoJoStylization()
+    async with websockets.serve(processor.process_frame, "localhost", 8000):
+        await asyncio.Future()
 
 if __name__ == '__main__':
-    weight = torch.load('weight.pth', map_location='cpu')
-    model = SimpleGenerator()
-    model.load_state_dict(weight)
-    model.eval()
-
-    cap = cv2.VideoCapture(0)  # Open the default camera
-
-    while cap.isOpened():
-        ret, frame = cap.read()
-        if not ret:
-            break
-
-        raw_image = cv2.resize(frame, (256, 256))  # Resize frame for the model input
-        image = raw_image / 127.5 - 1  # Normalize image
-        image = image.transpose(2, 0, 1)
-        image = torch.tensor(image).unsqueeze(0)
-        
-        with torch.no_grad():
-            output = model(image.float())
-        
-        output = output.squeeze(0).detach().numpy()
-        output = output.transpose(1, 2, 0)
-        output = (output + 1) * 127.5
-        output = np.clip(output, 0, 255).astype(np.uint8)
-        output = cv2.resize(output, (frame.shape[1], frame.shape[0]))  # Resize to original frame size
-
-        # Combine the original frame and the stylized output side-by-side
-        combined_output = np.hstack((frame, output))
-
-        cv2.imshow('Real-time JoJo Face Stylization', combined_output)
-
-        # Press 'q' to exit
-        if cv2.waitKey(1) & 0xFF == ord('q'):
-            break
-
-    cap.release()
-    cv2.destroyAllWindows()
+    asyncio.run(start_server())
