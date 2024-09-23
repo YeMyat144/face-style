@@ -1,12 +1,12 @@
 import os
 import cv2
 import torch
-import asyncio
-import websockets
 import numpy as np
-from PIL import Image
-from io import BytesIO
-import base64
+import torch.nn as nn
+from tkinter import *
+from tkinter import filedialog
+from PIL import Image, ImageTk
+from tqdm import tqdm
 from torch.nn import functional as F
 
 class ResBlock(nn.Module):
@@ -25,7 +25,6 @@ class ResBlock(nn.Module):
         output = self.activation(output + inputs)
         return output
 
-
 class DownBlock(nn.Module):
     def __init__(self, in_channel, out_channel):
         super(DownBlock, self).__init__()
@@ -40,7 +39,6 @@ class DownBlock(nn.Module):
     def forward(self, inputs):
         output = self.conv_layer(inputs)
         return output
-
 
 class UpBlock(nn.Module):
     def __init__(self, in_channel, out_channel, is_last=False):
@@ -64,7 +62,6 @@ class UpBlock(nn.Module):
         else:
             output = self.act(output)
         return output
-
 
 class SimpleGenerator(nn.Module):
     def __init__(self, num_channel=32, num_blocks=4):
@@ -92,60 +89,142 @@ class SimpleGenerator(nn.Module):
         up4 = self.up4(up3 + down1)
         return up4
     
-class RealTimeJoJoStylization:
-    def __init__(self):
+    
+class JoJoFaceStylizationApp:
+    def __init__(self, master):
+        self.master = master
+        self.master.title("JoJo Face Stylization")
+        self.master.geometry("1400x800")
+
+        # Frame for video display
+        self.video_frame = Frame(master)
+        self.video_frame.pack()
+
+        # Labels for original and stylized images
+        self.original_label = Label(self.video_frame, text="Original Version")
+        self.original_label.grid(row=0, column=0, padx=10, pady=10)
+
+        self.stylized_label = Label(self.video_frame, text="Anime Version")
+        self.stylized_label.grid(row=0, column=1, padx=10, pady=10)
+
+        self.original_image_label = Label(self.video_frame)
+        self.original_image_label.grid(row=1, column=0, padx=10, pady=10)
+
+        self.stylized_image_label = Label(self.video_frame)
+        self.stylized_image_label.grid(row=1, column=1, padx=10, pady=10)
+
+        # Buttons for upload, start, and stop
+        self.button_frame = Frame(master)
+        self.button_frame.pack(pady=90)
+
+        self.upload_button = Button(self.button_frame, text="Upload Image", command=self.upload_image)
+        self.upload_button.grid(row=0, column=0, padx=20)
+
+        self.start_button = Button(self.button_frame, text="Start Real-time", command=self.start_stylization)
+        self.start_button.grid(row=0, column=1, padx=20)
+
+        self.stop_button = Button(self.button_frame, text="Stop Real-time", command=self.stop_stylization)
+        self.stop_button.grid(row=0, column=2, padx=20)
+
+        self.cap = None
         self.model = self.load_model()
         if self.model:
             print("Model loaded successfully!")
 
     def load_model(self):
         model = SimpleGenerator()
-        weight_path = '/current/weight.pth'
-        if not os.path.exists(weight_path):
-            print(f"Error: {weight_path} file not found.")
+        if not os.path.exists('weight.pth'):
+            print("Error: weight.pth file not found.")
             return None
-        model.load_state_dict(torch.load(weight_path, map_location='cpu'))
+        model.load_state_dict(torch.load('weight.pth', map_location='cpu'))
         model.eval()
         return model
 
-    async def process_frame(self, websocket, path):
-        async for message in websocket:
-            # Receive frame from client
-            frame_data = base64.b64decode(message)
-            image = Image.open(BytesIO(frame_data))
-            image = np.array(image)
+    def start_stylization(self):
+        # Open camera
+        self.cap = cv2.VideoCapture(0)
+        if not self.cap.isOpened():
+            print("Error: Could not open camera.")
+            return
+        self.update_frame()
 
-            # Convert image from RGB to model's input format
-            image = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
-            image = cv2.resize(image, (256, 256))
-            image = image / 127.5 - 1
-            image = image.transpose(2, 0, 1)
-            image = torch.tensor(image).unsqueeze(0)
+    def stop_stylization(self):
+        if self.cap:
+            self.cap.release()
+            self.cap = None
+            self.original_image_label.config(image='')
+            self.stylized_image_label.config(image='')
 
-            with torch.no_grad():
-                output = self.model(image.float())
+    def upload_image(self):
+        file_path = filedialog.askopenfilename(filetypes=[("Image files", "*.jpg;*.jpeg;*.png")])
+        if not file_path:
+            return
 
-            # Convert output back to image
-            output = output.squeeze(0).detach().numpy()
-            output = output.transpose(1, 2, 0)
-            output = (output + 1) * 127.5
-            output = np.clip(output, 0, 255).astype(np.uint8)
-            output = cv2.cvtColor(output, cv2.COLOR_BGR2RGB)
+        # Load and display the original image
+        raw_image = cv2.imread(file_path)
+        frame_rgb = cv2.cvtColor(raw_image, cv2.COLOR_BGR2RGB)
+        self.display_image(frame_rgb, self.original_image_label)
 
-            # Encode the processed frame as base64
-            output_image = Image.fromarray(output)
-            buffer = BytesIO()
-            output_image.save(buffer, format="JPEG")
-            processed_frame = base64.b64encode(buffer.getvalue()).decode()
+        # Stylize the image
+        stylized_output = self.stylize_image(frame_rgb)
 
-            # Send back the processed frame
-            await websocket.send(processed_frame)
+        # Display the stylized image
+        self.display_image(stylized_output, self.stylized_image_label)
 
-# Start the WebSocket server
-async def start_server():
-    processor = RealTimeJoJoStylization()
-    async with websockets.serve(processor.process_frame, "localhost", 8000):
-        await asyncio.Future()
+    def stylize_image(self, frame_rgb):
+        raw_image = cv2.resize(frame_rgb, (256, 256))
+        image = raw_image / 127.5 - 1  # Normalize image to range [-1, 1]
+        image = image.transpose(2, 0, 1)  # Change shape to [C, H, W]
+        image = torch.tensor(image).unsqueeze(0)  # Add batch dimension
+
+        with torch.no_grad():
+            output = self.model(image.float())  # Forward pass through model
+
+        output = output.squeeze(0).detach().numpy()  # Remove batch dimension
+        output = output.transpose(1, 2, 0)  # Convert shape to [H, W, C]
+        output = (output + 1) * 127.5  # Denormalize image to range [0, 255]
+        output = np.clip(output, 0, 255).astype(np.uint8)  # Clip to valid pixel range
+        return output
+
+    def display_image(self, image_array, label, width=640, height=480):
+    # Resize image_array to fixed dimensions
+      resized_image = cv2.resize(image_array, (width, height))
+
+    # Convert the resized image to a PIL Image
+      image = Image.fromarray(resized_image)
+
+    # Convert to ImageTk format
+      image_tk = ImageTk.PhotoImage(image)
+
+    # Display the image in the label
+      label.imgtk = image_tk
+      label.configure(image=image_tk)
+
+
+    def update_frame(self):
+        if self.cap:
+            ret, frame = self.cap.read()
+            if ret:
+                # Convert from BGR to RGB
+                frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+
+                # Stylize the image
+                stylized_output = self.stylize_image(frame_rgb)
+
+                # Display the images
+                self.display_image(frame_rgb, self.original_image_label)
+                self.display_image(stylized_output, self.stylized_image_label)
+
+            # Repeat every 10 milliseconds
+            self.master.after(10, self.update_frame)
+
+    def on_closing(self):
+        self.stop_stylization()
+        self.master.destroy()
+
 
 if __name__ == '__main__':
-    asyncio.run(start_server())
+    root = Tk()
+    app = JoJoFaceStylizationApp(root)
+    root.protocol("WM_DELETE_WINDOW", app.on_closing)
+    root.mainloop()
