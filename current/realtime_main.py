@@ -95,37 +95,51 @@ class JoJoFaceStylizationApp:
         self.master = master
         self.master.title("JoJo Face Stylization")
         self.master.geometry("1400x800")
+        self.master.configure(bg="#708090")  # Set background color
+
+        # Main title for the application
+        self.title_label = Label(master, text="🎨 JoJo Face Stylization 🎨", 
+                                 font=("Helvetica", 20, "bold"), fg="#ffffff", bg="#708090")
+        self.title_label.pack(pady=20)
 
         # Frame for video display
-        self.video_frame = Frame(master)
-        self.video_frame.pack()
+        self.video_frame = Frame(master, bg="#ffffff", bd=2, relief="groove")
+        self.video_frame.pack(pady=20, padx=20, fill="both", expand=True)
 
         # Labels for original and stylized images
-        self.original_label = Label(self.video_frame, text="Original Version")
+        self.original_label = Label(self.video_frame, text="Original Version", font=("Arial", 14, "bold"), 
+                                    fg="#0073e6", bg="#ffffff")
         self.original_label.grid(row=0, column=0, padx=10, pady=10)
 
-        self.stylized_label = Label(self.video_frame, text="Anime Version")
+        self.stylized_label = Label(self.video_frame, text="Anime Version", font=("Arial", 14, "bold"), 
+                                    fg="#ff6600", bg="#ffffff")
         self.stylized_label.grid(row=0, column=1, padx=10, pady=10)
 
-        self.original_image_label = Label(self.video_frame)
+        # Labels to display images
+        self.original_image_label = Label(self.video_frame, bg="#f0f0f0", bd=1, relief="solid")
         self.original_image_label.grid(row=1, column=0, padx=10, pady=10)
 
-        self.stylized_image_label = Label(self.video_frame)
+        self.stylized_image_label = Label(self.video_frame, bg="#f0f0f0", bd=1, relief="solid")
         self.stylized_image_label.grid(row=1, column=1, padx=10, pady=10)
 
-        # Buttons for upload, start, and stop
-        self.button_frame = Frame(master)
-        self.button_frame.pack(pady=90)
 
-        self.upload_button = Button(self.button_frame, text="Upload Image", command=self.upload_image)
-        self.upload_button.grid(row=0, column=0, padx=20)
+        # Frame for buttons
+        self.button_frame = Frame(master, bg="#708090")
+        self.button_frame.pack(pady=20)
 
-        self.start_button = Button(self.button_frame, text="Start Real-time", command=self.start_stylization)
-        self.start_button.grid(row=0, column=1, padx=20)
+        self.upload_button = Button(self.button_frame, text="Upload Image 🖼️", command=self.upload_image, 
+                                    font=("Helvetica", 12), bg="#cce5ff", activebackground="#99ccff", bd=2)
+        self.upload_button.grid(row=0, column=0, padx=20, ipadx=10)
 
-        self.stop_button = Button(self.button_frame, text="Stop Real-time", command=self.stop_stylization)
-        self.stop_button.grid(row=0, column=2, padx=20)
+        self.start_button = Button(self.button_frame, text="Start Real-time 🎥", command=self.start_stylization, 
+                                   font=("Helvetica", 12), bg="#d1f0c0", activebackground="#b8e994", bd=2)
+        self.start_button.grid(row=0, column=1, padx=20, ipadx=10)
 
+        self.stop_button = Button(self.button_frame, text="Stop Real-time ✋", command=self.stop_stylization, 
+                                  font=("Helvetica", 12), bg="#ffcccc", activebackground="#ff9999", bd=2)
+        self.stop_button.grid(row=0, column=2, padx=20, ipadx=10)
+
+        # Initializing the model
         self.cap = None
         self.model = self.load_model()
         if self.model:
@@ -187,40 +201,27 @@ class JoJoFaceStylizationApp:
         return output
 
     def display_image(self, image_array, label, width=640, height=480):
-    # Resize image_array to fixed dimensions
-      resized_image = cv2.resize(image_array, (width, height))
-
-    # Convert the resized image to a PIL Image
-      image = Image.fromarray(resized_image)
-
-    # Convert to ImageTk format
-      image_tk = ImageTk.PhotoImage(image)
-
-    # Display the image in the label
-      label.imgtk = image_tk
-      label.configure(image=image_tk)
-
+        # Resize image_array to fixed dimensions
+        resized_image = cv2.resize(image_array, (width, height))
+        image = Image.fromarray(resized_image)
+        image_tk = ImageTk.PhotoImage(image)
+        label.imgtk = image_tk
+        label.configure(image=image_tk)
 
     def update_frame(self):
         if self.cap:
             ret, frame = self.cap.read()
             if ret:
-                # Convert from BGR to RGB
                 frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-
-                # Stylize the image
                 stylized_output = self.stylize_image(frame_rgb)
-
-                # Display the images
                 self.display_image(frame_rgb, self.original_image_label)
                 self.display_image(stylized_output, self.stylized_image_label)
-
-            # Repeat every 10 milliseconds
             self.master.after(10, self.update_frame)
 
     def on_closing(self):
         self.stop_stylization()
         self.master.destroy()
+
 
 
 if __name__ == '__main__':
