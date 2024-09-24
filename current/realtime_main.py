@@ -186,19 +186,26 @@ class JoJoFaceStylizationApp:
         self.display_image(stylized_output, self.stylized_image_label)
 
     def stylize_image(self, frame_rgb):
-        raw_image = cv2.resize(frame_rgb, (256, 256))
-        image = raw_image / 127.5 - 1  # Normalize image to range [-1, 1]
+        original_height, original_width = frame_rgb.shape[:2]
+
+    # Resize image to 256x256 for model input
+        resized_image = cv2.resize(frame_rgb, (256, 256))
+        image = resized_image / 127.5 - 1  # Normalize image to range [-1, 1]
         image = image.transpose(2, 0, 1)  # Change shape to [C, H, W]
         image = torch.tensor(image).unsqueeze(0)  # Add batch dimension
 
         with torch.no_grad():
             output = self.model(image.float())  # Forward pass through model
 
-        output = output.squeeze(0).detach().numpy()  # Remove batch dimension
-        output = output.transpose(1, 2, 0)  # Convert shape to [H, W, C]
-        output = (output + 1) * 127.5  # Denormalize image to range [0, 255]
-        output = np.clip(output, 0, 255).astype(np.uint8)  # Clip to valid pixel range
-        return output
+    # Process the output and convert it back to an image
+            output = output.squeeze(0).detach().numpy()  # Remove batch dimension
+            output = output.transpose(1, 2, 0)  # Convert shape to [H, W, C]
+            output = (output + 1) * 127.5  # Denormalize image to range [0, 255]
+            output = np.clip(output, 0, 255).astype(np.uint8)  # Clip to valid pixel range
+    # Resize stylized output back to original image size
+            stylized_output = cv2.resize(output, (original_width, original_height))
+        return stylized_output
+
 
     def display_image(self, image_array, label, width=640, height=480):
         # Resize image_array to fixed dimensions
