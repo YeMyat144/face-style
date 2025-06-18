@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" href="/jojo.png" type="image/png">
+    <link rel="stylesheet" href="/style.css">
+    <title>JoJo Real-Time Face Stylization</title>
+</head>
+<body>
+    <div>
+        <h1>JoJo Face Stylization</h1>
+        
+        <div id="imageContainer">
+            <h3>Image Transformation</h3>
+            <div class="button-group">
+              <div class="file-upload">
+                <input type="file" id="inputImage" accept="image/*" />
+                <label for="inputImage">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="upload-icon" viewBox="0 0 24 24" width="24" height="24">
+                      <path fill="currentColor" d="M5 20h14v-2H5v2zm7-18L5.33 9h3.67v4h6V9h3.67L12 2z"/>
+                    </svg>
+                    Upload Image
+                </label>
+              </div>
+              <button id="transformButton">Transform Image</button>
+            </div>
+            <div id="imageComparison" style="display: none; gap: 20px; margin-top: 20px;">
+                <div>
+                    <p>Original Image:</p>
+                    <img width="256" height="256" id="originalImage" alt="Original"/>
+                </div>
+                <div>
+                    <p>Stylized Image:</p>
+                    <img width="256" height="256" id="outputImage" alt="Stylized"/>
+                </div>
+            </div>
+        </div>
+        
+        <div id="videoContainer" style="margin-top: 50px;">
+            <h3>Real-Time Video</h3>
+            <button id="startVideo">Start Camera</button>
+            <button id="stopVideo" style="display: none;">Stop Camera</button>
+            <div id="videoComparison" style="display: flex; gap: 20px; margin-top: 20px;">
+                <div>
+                    <p>Original Video:</p>
+                    <video id="webcam" autoplay playsinline style="width: 400px; height: 300px; background: #000;"></video>
+                </div>
+                <div>
+                    <p>Stylized Video:</p>
+                    <canvas id="outputCanvas" width="400" height="300" style="background: #000;"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="spinner" style="display: none;">Processing...</div>
+    <div id="errorMsg" style="color: red; margin-top: 20px;"></div>
+
+    <script>
+        // Global variables
+        let videoStream = null;
+        let isProcessing = false;
+        let animationFrameId = null;
+
+        // DOM elements
+        const transformButton = document.getElementById('transformButton');
+        const startVideoButton = document.getElementById('startVideo');
+        const stopVideoButton = document.getElementById('stopVideo');
+        const webcam = document.getElementById('webcam');
+        const outputCanvas = document.getElementById('outputCanvas');
+        const originalImage = document.getElementById('originalImage');
+        const outputImage = document.getElementById('outputImage');
+        const inputImage = document.getElementById('inputImage');
+        const spinner = document.getElementById('spinner');
+        const errorMsg = document.getElementById('errorMsg');
+        const imageComparison = document.getElementById('imageComparison');
+
+        // Transform uploaded image using backend API
+        transformButton.addEventListener('click', async () => {
+            errorMsg.textContent = '';
+            const file = inputImage.files[0];
+            if (!file) {
+                alert("Please select an image first!");
+                return;
+            }
+            
+            // Show the image comparison container
+            imageComparison.style.display = 'flex';
+            
+            originalImage.src = URL.createObjectURL(file);
+            spinner.style.display = 'block';
+            
+            try {
+                const formData = new FormData();
+                formData.append('image', file);
+                const response = await fetch('http://localhost:5000/api/transform', {
+                    method: 'POST',
+                    body: formData
+                });
+                if (!response.ok) throw new Error('Failed to process image');
+                const blob = await response.blob();
+                outputImage.src = URL.createObjectURL(blob);
+            } catch (error) {
+                errorMsg.textContent = 'Error: ' + error.message;
+            } finally {
+                spinner.style.display = 'none';
+            }
+        });
+
+        // Webcam logic using backend API
+        startVideoButton.addEventListener('click', async () => {
+            errorMsg.textContent = '';
+            try {
+                videoStream = await navigator.mediaDevices.getUserMedia({ 
+                    video: { width: 400, height: 300 }, 
+                    audio: false 
+                });
+                webcam.srcObject = videoStream;
+
+                webcam.onloadedmetadata = () => {
+                    webcam.play();
+                    startVideoButton.style.display = 'none';
+                    stopVideoButton.style.display = 'inline';
+                    isProcessing = true;
+                    processVideo();
+                };
+            } catch (error) {
+                errorMsg.textContent = 'Could not access camera: ' + error.message;
+            }
+        });
+
+        stopVideoButton.addEventListener('click', () => {
+            if (videoStream) {
+                videoStream.getTracks().forEach(track => track.stop());
+                videoStream = null;
+            }
+            isProcessing = false;
+            if (animationFrameId) {
+                cancelAnimationFrame(animationFrameId);
+                animationFrameId = null;
+            }
+            startVideoButton.style.display = 'inline';
+            stopVideoButton.style.display = 'none';
+            const ctx = outputCanvas.getContext('2d');
+            ctx.clearRect(0, 0, outputCanvas.width, outputCanvas.height);
+        });
+
+        async function processVideo() {
+            if (!isProcessing) return;
+
+            try {
+                if (webcam.readyState < 2) {
+                    throw new Error("Webcam not ready.");
+                }
+
+                const canvas = document.createElement('canvas');
+                canvas.width = webcam.videoWidth;
+                canvas.height = webcam.videoHeight;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(webcam, 0, 0, canvas.width, canvas.height);
+
+                const blob = await new Promise((resolve, reject) => {
+                    canvas.toBlob(b => {
+                        if (b) resolve(b);
+                        else reject(new Error("Failed to create blob from canvas"));
+                    }, 'image/jpeg');
+                });
+
+                const formData = new FormData();
+                formData.append('image', blob, 'frame.jpg');
+                const response = await fetch('http://localhost:5000/api/transform', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                if (!response.ok) throw new Error('Failed to process video frame');
+
+                const resultBlob = await response.blob();
+                const img = new Image();
+                img.src = URL.createObjectURL(resultBlob);
+                await new Promise(res => img.onload = res);
+
+                const outputCtx = outputCanvas.getContext('2d');
+                outputCtx.drawImage(img, 0, 0, outputCanvas.width, outputCanvas.height);
+            } catch (error) {
+                errorMsg.textContent = 'Error: ' + error.message;
+            } finally {
+                if (isProcessing) {
+                    animationFrameId = requestAnimationFrame(processVideo);
+                }
+            }
+        }
+    </script>
+</body>
+</html>

@@ -236,3 +236,38 @@ if __name__ == '__main__':
     app = JoJoFaceStylizationApp(root)
     root.protocol("WM_DELETE_WINDOW", app.on_closing)
     root.mainloop()
+
+dummy_input = torch.randn(1, 3, 256, 256)
+model = SimpleGenerator()
+if os.path.exists('weight.pth'):
+    model.load_state_dict(torch.load('weight.pth', map_location='cpu'))
+    model.eval()
+    torch.onnx.export(model, dummy_input, "generator.onnx", 
+                      input_names=["input"], output_names=["output"],
+                      dynamic_axes={"input": {0: "batch"}, "output": {0: "batch"}})
+else:
+    print("weight.pth not found. Skipping ONNX export.")
+
+# --- Refactored for API use ---
+def load_stylization_model(weight_path='weight.pth'):
+    model = SimpleGenerator()
+    if not os.path.exists(weight_path):
+        raise FileNotFoundError(f"Model weights not found: {weight_path}")
+    model.load_state_dict(torch.load(weight_path, map_location='cpu'))
+    model.eval()
+    return model
+
+def stylize_image_with_model(model, frame_rgb):
+    original_height, original_width = frame_rgb.shape[:2]
+    resized_image = cv2.resize(frame_rgb, (256, 256))
+    image = resized_image / 127.5 - 1  # Normalize image to range [-1, 1]
+    image = image.transpose(2, 0, 1)  # Change shape to [C, H, W]
+    image = torch.tensor(image).unsqueeze(0)  # Add batch dimension
+    with torch.no_grad():
+        output = model(image.float())
+        output = output.squeeze(0).detach().numpy()
+        output = output.transpose(1, 2, 0)
+        output = (output + 1) * 127.5
+        output = np.clip(output, 0, 255).astype(np.uint8)
+        stylized_output = cv2.resize(output, (original_width, original_height))
+    return stylized_output

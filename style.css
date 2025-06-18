@@ -1,0 +1,145 @@
+/* Global Reset */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Impact', 'Segoe UI', 'Arial Black', Arial, sans-serif;
+}
+
+/* Body Styling */
+body {
+    background: linear-gradient(135deg, #ffccf9 0%, #ccccff 100%);
+    color: #333;
+    padding: 40px;
+}
+
+/* Header */
+h1 {
+    font-size: 3rem;
+    color: #4b0082;
+    text-shadow: 2px 2px #ffdb58;
+    text-align: center;
+    margin-bottom: 40px;
+    letter-spacing: 2px;
+}
+
+/* Section Containers */
+#imageContainer, #videoContainer {
+    background: #fff0f5;
+    border: 4px solid #4b0082;
+    border-radius: 16px;
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+    padding: 30px;
+    max-width: 1000px;
+    margin: 0 auto 50px auto;
+}
+
+/* Sub-headings */
+h3 {
+    font-size: 2.1rem;
+    margin-bottom: 20px;
+    color: #4b0082;
+    text-shadow: 1px 1px #ffdb58;
+    text-align: center;
+}
+
+p {
+    font-size: 1.6rem;
+    margin-bottom: 10px;
+    color: #800080;
+    text-align: center;
+}
+
+/* Buttons */
+button {
+    background: linear-gradient(145deg, #ff69b4, #ff1493);
+    color: white;
+    border: 2px solid #800080;
+    padding: 14px 30px;
+    border-radius: 12px;
+    font-size: 1rem;
+    cursor: pointer;
+    margin: 15px 10px 30px 0;
+    transition: all 0.3s ease;
+    text-shadow: 1px 1px #333;
+}
+
+button:hover {
+    background: linear-gradient(145deg, #ff1493, #ff69b4);
+    transform: scale(1.05);
+}
+
+/* Hide default file input */
+.file-upload input[type="file"] {
+    display: none;
+}
+
+/* Style the custom label button */
+.file-upload label {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 20px;
+    background-color: #800080;
+    color: white;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+}
+
+.file-upload label:hover {
+    background-color: #af08af;
+}
+
+/* Upload icon style */
+.upload-icon {
+    fill: white;
+}
+
+/* Image Comparison Layout */
+#imageComparison {
+    justify-content: center;
+    align-items: center;
+}
+
+#imageComparison img {
+    border: 4px solid #800080;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    transition: transform 0.3s ease;
+}
+
+#imageComparison img:hover {
+    transform: scale(1.1);
+}
+
+/* Video Comparison Layout */
+#videoComparison {
+    justify-content: center;
+    align-items: center;
+}
+
+video, canvas {
+    display: block;
+    border-radius: 12px;
+    border: 4px solid #800080;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+}
+
+/* Spinner */
+#spinner {
+    text-align: center;
+    font-size: 1.4rem;
+    color: #800080;
+    margin-top: 20px;
+    font-weight: bold;
+}
+
+/* Error message */
+#errorMsg {
+    text-align: center;
+    font-size: 1rem;
+    color: #d9534f;
+    font-weight: bold;
+}
