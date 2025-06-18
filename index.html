@@ -75,6 +75,7 @@
         const spinner = document.getElementById('spinner');
         const errorMsg = document.getElementById('errorMsg');
         const imageComparison = document.getElementById('imageComparison');
+        const apiUrl = process.env.NEXT_PUBLIC_API_URL;
 
         // Transform uploaded image using backend API
         transformButton.addEventListener('click', async () => {
@@ -94,7 +95,7 @@
             try {
                 const formData = new FormData();
                 formData.append('image', file);
-                const response = await fetch('http://localhost:5000/api/transform', {
+                const response = await fetch(`${api_Url}/api/transform`, {
                     method: 'POST',
                     body: formData
                 });
@@ -169,7 +170,7 @@
 
                 const formData = new FormData();
                 formData.append('image', blob, 'frame.jpg');
-                const response = await fetch('http://localhost:5000/api/transform', {
+                const response = await fetch(`${api_Url}/api/transform`, {
                     method: 'POST',
                     body: formData
                 });
