@@ -29,23 +29,18 @@ This project provides real-time and image-based face stylization in the style of
    ```
 
 ## Running the API Server
-1. Start the Flask API:
+- Start the Flask API:
    ```bash
    python app.py
    ```
    The API will be available at `http://localhost:5000`.
 
-2. Test the API (example using `curl`):
-   ```bash
-   curl -X POST -F "image=@test_img/viking.jpg" http://localhost:5000/api/transform --output stylized.jpg
-   ```
 
 ## Using the Web Frontend
 1. Open `index.html` in your browser (double-click or use a local server).
 2. Upload an image and click "Transform Image" to see the result.
 3. Use the real-time video section to stylize webcam input (requires API server running).
 
-> **Note:** The web frontend expects the API to be running at `http://localhost:5000` by default. If you deploy elsewhere, update the API URL in `index.html`.
 
 ## Running the Desktop GUI
 1. Make sure you have `tkinter` installed.
