@@ -3,11 +3,19 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="icon" href="/jojo.png" type="image/png">
+    <link rel="icon" href="/assets/jojo.png" type="image/png">
     <link rel="stylesheet" href="/style.css">
-    <title>JoJo Real-Time Face Stylization</title>
+    <title>JoJo Face Stylization</title>
 </head>
 <body>
+    <audio id="themeMusic" src="/assets/theme.mp3" autoplay loop></audio>
+    <audio id="oraSound" src="/assets/ora.mp3"></audio>
+
+    <!-- Music Toggle Button -->
+    <div style="position: fixed; top: 20px; right: 20px; z-index: 999;">
+        <button id="toggleMusicButton">Pause Music</button>
+    </div>
+
     <div>
         <h1>JoJo Face Stylization</h1>
         
@@ -75,9 +83,26 @@
         const spinner = document.getElementById('spinner');
         const errorMsg = document.getElementById('errorMsg');
         const imageComparison = document.getElementById('imageComparison');
-        const apiUrl = 'https://anime-face-gx3i.onrender.com'; 
 
-        // Transform uploaded image using backend API
+        const oraSound = document.getElementById('oraSound');
+        const themeMusic = document.getElementById('themeMusic');
+        const toggleMusicButton = document.getElementById('toggleMusicButton');
+
+        transformButton.addEventListener('click', () => {
+            oraSound.currentTime = 0;
+            oraSound.play();
+        });
+
+        toggleMusicButton.addEventListener('click', () => {
+            if (themeMusic.paused) {
+                themeMusic.play();
+                toggleMusicButton.textContent = "Pause Music";
+            } else {
+                themeMusic.pause();
+                toggleMusicButton.textContent = "Play Music";
+            }
+        });
+
         transformButton.addEventListener('click', async () => {
             errorMsg.textContent = '';
             const file = inputImage.files[0];
@@ -86,16 +111,14 @@
                 return;
             }
             
-            // Show the image comparison container
             imageComparison.style.display = 'flex';
-            
             originalImage.src = URL.createObjectURL(file);
             spinner.style.display = 'block';
             
             try {
                 const formData = new FormData();
                 formData.append('image', file);
-                const response = await fetch(`${api_Url}/api/transform`, {
+                const response = await fetch('http://localhost:5000/api/transform', {
                     method: 'POST',
                     body: formData
                 });
@@ -109,14 +132,11 @@
             }
         });
 
-        // Webcam logic using backend API
+        // Webcam logic
         startVideoButton.addEventListener('click', async () => {
             errorMsg.textContent = '';
             try {
-                videoStream = await navigator.mediaDevices.getUserMedia({ 
-                    video: { width: 400, height: 300 }, 
-                    audio: false 
-                });
+                videoStream = await navigator.mediaDevices.getUserMedia({ video: { width: 400, height: 300 }, audio: false });
                 webcam.srcObject = videoStream;
 
                 webcam.onloadedmetadata = () => {
@@ -151,9 +171,7 @@
             if (!isProcessing) return;
 
             try {
-                if (webcam.readyState < 2) {
-                    throw new Error("Webcam not ready.");
-                }
+                if (webcam.readyState < 2) throw new Error("Webcam not ready.");
 
                 const canvas = document.createElement('canvas');
                 canvas.width = webcam.videoWidth;
@@ -162,34 +180,24 @@
                 ctx.drawImage(webcam, 0, 0, canvas.width, canvas.height);
 
                 const blob = await new Promise((resolve, reject) => {
-                    canvas.toBlob(b => {
-                        if (b) resolve(b);
-                        else reject(new Error("Failed to create blob from canvas"));
-                    }, 'image/jpeg');
+                    canvas.toBlob(b => { if (b) resolve(b); else reject(new Error("Failed to create blob")); }, 'image/jpeg');
                 });
 
                 const formData = new FormData();
                 formData.append('image', blob, 'frame.jpg');
-                const response = await fetch(`${api_Url}/api/transform`, {
-                    method: 'POST',
-                    body: formData
-                });
-
+                const response = await fetch('http://localhost:5000/api/transform', { method: 'POST', body: formData });
                 if (!response.ok) throw new Error('Failed to process video frame');
 
                 const resultBlob = await response.blob();
                 const img = new Image();
                 img.src = URL.createObjectURL(resultBlob);
                 await new Promise(res => img.onload = res);
-
                 const outputCtx = outputCanvas.getContext('2d');
                 outputCtx.drawImage(img, 0, 0, outputCanvas.width, outputCanvas.height);
             } catch (error) {
                 errorMsg.textContent = 'Error: ' + error.message;
             } finally {
-                if (isProcessing) {
-                    animationFrameId = requestAnimationFrame(processVideo);
-                }
+                if (isProcessing) animationFrameId = requestAnimationFrame(processVideo);
             }
         }
     </script>

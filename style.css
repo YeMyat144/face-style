@@ -1,72 +1,117 @@
+/* Import JoJo-style font (You can also download one if you have a specific font file) */
+@import url('https://fonts.googleapis.com/css2?family=Permanent+Marker&display=swap');
+
 /* Global Reset */
 * {
     margin: 0;
     padding: 0;
     box-sizing: border-box;
-    font-family: 'Impact', 'Segoe UI', 'Arial Black', Arial, sans-serif;
+    font-family: 'Permanent Marker', 'Impact', 'Segoe UI', 'Arial Black', Arial, sans-serif;
 }
 
 /* Body Styling */
 body {
-    background: linear-gradient(135deg, #ffccf9 0%, #ccccff 100%);
-    color: #333;
+    background: linear-gradient(135deg, #3a0072 0%, #FFD700 100%);
+    color: #FFF;
     padding: 40px;
+    overflow-x: hidden;
+    position: relative;
+}
+
+/* ゴゴゴゴ atmosphere */
+body::before {
+    content: "ゴゴゴゴゴゴ";
+    font-size: 20rem;
+    color: rgba(75, 0, 130, 0.1);
+    position: absolute;
+    top: 20%;
+    left: 10%;
+    transform: rotate(-20deg);
+    z-index: 0;
+    pointer-events: none;
+}
+
+/* Animated Particles */
+body::after {
+    content: "";
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    background: radial-gradient(circle, rgba(255,255,255,0.15) 1px, transparent 1px);
+    background-size: 50px 50px;
+    animation: floatParticles 20s linear infinite;
+    z-index: 0;
+}
+
+@keyframes floatParticles {
+    from { background-position: 0 0; }
+    to { background-position: 500px 1000px; }
 }
 
 /* Header */
 h1 {
-    font-size: 3rem;
-    color: #4b0082;
-    text-shadow: 2px 2px #ffdb58;
+    font-size: 4rem;
+    color: #FFD700;
+    text-shadow: 4px 4px #4B0082, 6px 6px #000;
     text-align: center;
-    margin-bottom: 40px;
-    letter-spacing: 2px;
+    margin-bottom: 60px;
+    letter-spacing: 5px;
+    text-transform: uppercase;
+    position: relative;
+    z-index: 1;
 }
 
 /* Section Containers */
 #imageContainer, #videoContainer {
-    background: #fff0f5;
-    border: 4px solid #4b0082;
-    border-radius: 16px;
-    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
-    padding: 30px;
+    background: rgba(0, 0, 0, 0.85);
+    border: 6px double #FFD700;
+    border-radius: 24px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.8);
+    padding: 40px;
     max-width: 1000px;
-    margin: 0 auto 50px auto;
+    margin: 0 auto 70px auto;
+    position: relative;
+    z-index: 1;
 }
 
 /* Sub-headings */
 h3 {
-    font-size: 2.1rem;
-    margin-bottom: 20px;
-    color: #4b0082;
-    text-shadow: 1px 1px #ffdb58;
+    font-size: 2.8rem;
+    margin-bottom: 30px;
+    color: #FFD700;
+    text-shadow: 3px 3px #4B0082, 5px 5px #000;
     text-align: center;
+    text-transform: uppercase;
 }
 
 p {
-    font-size: 1.6rem;
-    margin-bottom: 10px;
-    color: #800080;
+    font-size: 2rem;
+    margin-bottom: 20px;
+    color: #EEE;
     text-align: center;
+    text-shadow: 1px 1px #4B0082;
 }
 
 /* Buttons */
 button {
-    background: linear-gradient(145deg, #ff69b4, #ff1493);
-    color: white;
-    border: 2px solid #800080;
-    padding: 14px 30px;
-    border-radius: 12px;
-    font-size: 1rem;
+    background: linear-gradient(145deg, #9900FF, #4B0082);
+    color: #FFD700;
+    border: 4px solid #FFD700;
+    padding: 18px 40px;
+    border-radius: 16px;
+    font-size: 1.4rem;
     cursor: pointer;
-    margin: 15px 10px 30px 0;
+    margin: 25px 20px 50px 0;
     transition: all 0.3s ease;
-    text-shadow: 1px 1px #333;
+    text-shadow: 2px 2px #000;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.7);
+    position: relative;
+    z-index: 1;
 }
 
 button:hover {
-    background: linear-gradient(145deg, #ff1493, #ff69b4);
-    transform: scale(1.05);
+    background: linear-gradient(145deg, #FFD700, #9900FF);
+    transform: scale(1.15);
 }
 
 /* Hide default file input */
@@ -78,23 +123,27 @@ button:hover {
 .file-upload label {
     display: inline-flex;
     align-items: center;
-    gap: 10px;
-    padding: 10px 20px;
-    background-color: #800080;
-    color: white;
-    border-radius: 5px;
+    gap: 12px;
+    padding: 15px 30px;
+    background-color: #ffd700;
+    color: #4B0082;
+    font-weight: bold;
+    border-radius: 10px;
     cursor: pointer;
-    transition: background-color 0.3s ease;
-    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    transition: background-color 0.3s ease, transform 0.3s ease;
+    box-shadow: 0 6px 15px rgba(0,0,0,0.5);
+    position: relative;
+    z-index: 1;
 }
 
 .file-upload label:hover {
-    background-color: #af08af;
+    color: #4B0082;
+    transform: scale(1.08);
 }
 
 /* Upload icon style */
 .upload-icon {
-    fill: white;
+    fill: #FFD700;
 }
 
 /* Image Comparison Layout */
@@ -104,14 +153,15 @@ button:hover {
 }
 
 #imageComparison img {
-    border: 4px solid #800080;
-    border-radius: 12px;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-    transition: transform 0.3s ease;
+    border: 6px solid #FFD700;
+    border-radius: 16px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.8);
+    transition: transform 0.4s ease;
 }
 
 #imageComparison img:hover {
-    transform: scale(1.1);
+    transform: scale(1.2) rotate(-3deg);
+    box-shadow: 0 20px 50px rgba(0,0,0,0.9);
 }
 
 /* Video Comparison Layout */
@@ -122,24 +172,26 @@ button:hover {
 
 video, canvas {
     display: block;
-    border-radius: 12px;
-    border: 4px solid #800080;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    border-radius: 16px;
+    border: 6px solid #FFD700;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.8);
 }
 
 /* Spinner */
 #spinner {
     text-align: center;
-    font-size: 1.4rem;
-    color: #800080;
-    margin-top: 20px;
+    font-size: 1.8rem;
+    color: #FFD700;
+    margin-top: 30px;
     font-weight: bold;
+    text-shadow: 2px 2px #4B0082;
 }
 
 /* Error message */
 #errorMsg {
     text-align: center;
-    font-size: 1rem;
-    color: #d9534f;
+    font-size: 1.4rem;
+    color: #FF4040;
     font-weight: bold;
+    text-shadow: 2px 2px #000;
 }
